@@ -1,0 +1,16 @@
+[
+  {"ja": "空き家", "en": "vacant / unused home", "note": "Context-dependent; preserve Japanese term in parentheses when legal specificity matters."},
+  {"ja": "空き地", "en": "vacant land"},
+  {"ja": "古民家", "en": "traditional old house (kominka)"},
+  {"ja": "現況有姿", "en": "transferred in present condition"},
+  {"ja": "要補修", "en": "repairs required"},
+  {"ja": "大幅な補修が必要", "en": "substantial repairs required"},
+  {"ja": "補修不要", "en": "no repairs indicated by source"},
+  {"ja": "無償譲渡", "en": "free transfer"},
+  {"ja": "価格応相談", "en": "price negotiable"},
+  {"ja": "再建築不可", "en": "rebuilding reported as not permitted"},
+  {"ja": "市街化調整区域", "en": "urbanization control area"},
+  {"ja": "農地付き", "en": "includes agricultural land"},
+  {"ja": "公売", "en": "public sale"},
+  {"ja": "入札", "en": "tender / bid"}
+]
