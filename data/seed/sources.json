@@ -1,0 +1,16 @@
+{
+  "sources": [
+    {
+      "slug": "akiya-bank",
+      "name": "Akiya Bank (Nationwide)",
+      "source_class": "NATIONWIDE_AKIYA_BANK",
+      "base_url": "https://www.akiya-bank.com"
+    },
+    {
+      "slug": "mlit-reinfolib",
+      "name": "MLIT ReinfoLib",
+      "source_class": "SUPPORTING_DATA",
+      "base_url": "https://www.reinfolib.mlit.go.jp"
+    }
+  ]
+}

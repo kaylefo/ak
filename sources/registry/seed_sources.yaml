@@ -1,0 +1,87 @@
+sources:
+  - source_id: mlit_akiya_bank_root
+    name: 国土交通省 空き家バンク（全国）
+    adapter_id: mlit_discovery
+    base_url: https://www.mlit.go.jp/akiya-bank/
+    source_class: NATIONAL_GOVERNMENT
+    access_mode: PUBLIC_HTML
+    entity_type: country
+    coverage_state: DIRECT_ACTIVE
+
+  - source_id: mlit_tokyo_municipal_links
+    name: 国土交通省 空き家バンク 東京都市町村リンク
+    adapter_id: mlit_municipal_links
+    base_url: https://www.mlit.go.jp/akiya-bank/prefecture/tokyo/
+    source_class: MUNICIPAL_DIRECT
+    access_mode: PUBLIC_HTML
+    entity_type: prefecture
+    metadata:
+      parent_source: mlit_akiya_bank_root
+      prefecture: 東京都
+
+  - source_id: lifull_akiya_bank
+    name: LIFULL ふるさと空き家バンク
+    adapter_id: lifull_discovery
+    base_url: https://www.akiya-v.jp/
+    source_class: NATIONWIDE_AKIYA_BANK
+    access_mode: PUBLIC_HTML
+    entity_type: country
+    coverage_state: DIRECT_ACTIVE
+
+  - source_id: lifull_tokyo_listings
+    name: LIFULL 東京都 物件一覧
+    adapter_id: lifull_listings
+    base_url: https://www.akiya-v.jp/akiya/prefecture/13/tokyo/
+    source_class: NATIONWIDE_AKIYA_BANK
+    access_mode: PUBLIC_HTML
+    entity_type: prefecture
+    metadata:
+      page_kind: index
+      parent_source: lifull_akiya_bank
+
+  - source_id: athome_akiya_root
+    name: アットホーム 空き家・空き地
+    adapter_id: athome_discovery
+    base_url: https://www.athome.co.jp/akiya/
+    source_class: GENERAL_HOME_SEARCH
+    access_mode: PUBLIC_HTML
+    entity_type: country
+    coverage_state: DIRECT_ACTIVE
+
+  - source_id: athome_chiba_listings
+    name: アットホーム 千葉県 物件一覧
+    adapter_id: athome_listings
+    base_url: https://www.athome.co.jp/akiya/chiba/
+    source_class: GENERAL_HOME_SEARCH
+    access_mode: PUBLIC_HTML
+    entity_type: prefecture
+    metadata:
+      page_kind: index
+      parent_source: athome_akiya_root
+
+  - source_id: generic_html_fallback
+    name: Generic HTML Link Extractor
+    adapter_id: generic_html
+    base_url: https://example.com/
+    source_class: SUPPORTING_DATA
+    access_mode: PUBLIC_HTML
+    entity_type: administrative_reference
+    coverage_state: DISCOVERED_UNPARSED
+
+  - source_id: generic_table_fallback
+    name: Generic HTML Table Parser
+    adapter_id: generic_table
+    base_url: https://example.com/table
+    source_class: SUPPORTING_DATA
+    access_mode: PUBLIC_HTML
+    entity_type: municipality
+    coverage_state: DISCOVERED_UNPARSED
+
+  - source_id: generic_json_ld_fallback
+    name: Generic JSON-LD Parser
+    adapter_id: generic_json_ld
+    base_url: https://example.com/jsonld
+    source_class: SUPPORTING_DATA
+    access_mode: PUBLIC_HTML
+    entity_type: municipality
+    coverage_state: DISCOVERED_UNPARSED
