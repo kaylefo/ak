@@ -124,10 +124,12 @@ class SafeHttpClient:
         *,
         timeout: float = 30.0,
         user_agent: str = "TsuboIngest/1.0 (+https://tsubo.example)",
+        default_headers: dict[str, str] | None = None,
         client: httpx.Client | None = None,
     ) -> None:
         self._timeout = timeout
         self._user_agent = user_agent
+        self._default_headers = default_headers or {}
         self._client = client or httpx.Client(timeout=timeout, follow_redirects=True)
         self._conditional: dict[str, ConditionalState] = {}
 
@@ -149,7 +151,7 @@ class SafeHttpClient:
     ) -> FetchResponse:
         validate_url(url)
 
-        request_headers = {"User-Agent": self._user_agent}
+        request_headers = {"User-Agent": self._user_agent, **self._default_headers}
         if headers:
             request_headers.update(headers)
 

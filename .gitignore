@@ -46,6 +46,12 @@ test-results/
 # MinIO/S3 local
 .minio/
 
+# Local crawl snapshots (content-addressed, reproducible from source)
+data/snapshots/
+
+# Large seed downloads (fetch via scripts/download_municipalities.sh)
+data/seed/municipalities_raw.csv
+
 # Terraform
 .terraform/
 *.tfstate

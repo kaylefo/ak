@@ -1,87 +1,63 @@
 sources:
-  - source_id: mlit_akiya_bank_root
-    name: 国土交通省 空き家バンク（全国）
-    adapter_id: mlit_discovery
-    base_url: https://www.mlit.go.jp/akiya-bank/
+  - source_id: mlit_akiya_municipal_links
+    name: 国土交通省 全国地方公共団体空き家・空き地情報サイトリンク集
+    name_en: MLIT Nationwide Municipal Akiya Link Directory
+    adapter_id: mlit_municipal_links
+    base_url: https://www.mlit.go.jp/totikensangyo/const/akiyabank_link.html
     source_class: NATIONAL_GOVERNMENT
     access_mode: PUBLIC_HTML
     entity_type: country
-    coverage_state: DIRECT_ACTIVE
-
-  - source_id: mlit_tokyo_municipal_links
-    name: 国土交通省 空き家バンク 東京都市町村リンク
-    adapter_id: mlit_municipal_links
-    base_url: https://www.mlit.go.jp/akiya-bank/prefecture/tokyo/
-    source_class: MUNICIPAL_DIRECT
-    access_mode: PUBLIC_HTML
-    entity_type: prefecture
-    metadata:
-      parent_source: mlit_akiya_bank_root
-      prefecture: 東京都
+    allowed_hostnames:
+      - www.mlit.go.jp
+      - mlit.go.jp
 
   - source_id: lifull_akiya_bank
-    name: LIFULL ふるさと空き家バンク
+    name: LIFULL HOME'S 空き家バンク
+    name_en: LIFULL Akiya Bank
     adapter_id: lifull_discovery
-    base_url: https://www.akiya-v.jp/
+    base_url: https://www.homes.co.jp/akiyabank/
     source_class: NATIONWIDE_AKIYA_BANK
     access_mode: PUBLIC_HTML
     entity_type: country
-    coverage_state: DIRECT_ACTIVE
+    allowed_hostnames:
+      - www.homes.co.jp
+
+  - source_id: lifull_aomori_listings
+    name: LIFULL 青森県 空き家物件一覧
+    name_en: LIFULL Aomori Prefecture Listings
+    adapter_id: lifull_listings
+    base_url: https://www.homes.co.jp/akiyabank/tohoku/aomori/
+    index_url: https://www.homes.co.jp/akiyabank/tohoku/aomori/
+    source_class: NATIONWIDE_AKIYA_BANK
+    access_mode: PUBLIC_HTML
+    entity_type: prefecture
+    metadata:
+      page_kind: index
+      prefecture: 青森県
+      prefecture_slug: aomori
 
   - source_id: lifull_tokyo_listings
-    name: LIFULL 東京都 物件一覧
+    name: LIFULL 東京都 空き家物件一覧
+    name_en: LIFULL Tokyo Prefecture Listings
     adapter_id: lifull_listings
-    base_url: https://www.akiya-v.jp/akiya/prefecture/13/tokyo/
+    base_url: https://www.homes.co.jp/akiyabank/kanto/tokyo/
+    index_url: https://www.homes.co.jp/akiyabank/kanto/tokyo/
     source_class: NATIONWIDE_AKIYA_BANK
     access_mode: PUBLIC_HTML
     entity_type: prefecture
     metadata:
       page_kind: index
-      parent_source: lifull_akiya_bank
+      prefecture: 東京都
+      prefecture_slug: tokyo
 
   - source_id: athome_akiya_root
-    name: アットホーム 空き家・空き地
+    name: アットホーム 空き家・空き地バンク
+    name_en: At Home Akiya Bank
     adapter_id: athome_discovery
-    base_url: https://www.athome.co.jp/akiya/
-    source_class: GENERAL_HOME_SEARCH
+    base_url: https://www.akiya-athome.jp/
+    source_class: NATIONWIDE_AKIYA_BANK
     access_mode: PUBLIC_HTML
     entity_type: country
-    coverage_state: DIRECT_ACTIVE
-
-  - source_id: athome_chiba_listings
-    name: アットホーム 千葉県 物件一覧
-    adapter_id: athome_listings
-    base_url: https://www.athome.co.jp/akiya/chiba/
-    source_class: GENERAL_HOME_SEARCH
-    access_mode: PUBLIC_HTML
-    entity_type: prefecture
-    metadata:
-      page_kind: index
-      parent_source: athome_akiya_root
-
-  - source_id: generic_html_fallback
-    name: Generic HTML Link Extractor
-    adapter_id: generic_html
-    base_url: https://example.com/
-    source_class: SUPPORTING_DATA
-    access_mode: PUBLIC_HTML
-    entity_type: administrative_reference
-    coverage_state: DISCOVERED_UNPARSED
-
-  - source_id: generic_table_fallback
-    name: Generic HTML Table Parser
-    adapter_id: generic_table
-    base_url: https://example.com/table
-    source_class: SUPPORTING_DATA
-    access_mode: PUBLIC_HTML
-    entity_type: municipality
-    coverage_state: DISCOVERED_UNPARSED
-
-  - source_id: generic_json_ld_fallback
-    name: Generic JSON-LD Parser
-    adapter_id: generic_json_ld
-    base_url: https://example.com/jsonld
-    source_class: SUPPORTING_DATA
-    access_mode: PUBLIC_HTML
-    entity_type: municipality
-    coverage_state: DISCOVERED_UNPARSED
+    allowed_hostnames:
+      - www.akiya-athome.jp
+      - akiya-athome.jp

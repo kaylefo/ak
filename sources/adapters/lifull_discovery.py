@@ -1,24 +1,25 @@
-"""LIFULL municipality discovery adapter."""
+"""LIFULL prefecture and municipality discovery for homes.co.jp/akiyabank."""
 
 from __future__ import annotations
 
+import re
+
 from adapters.base import absolute_url, make_tree
-from tsubo_contracts.enums import AccessMode, SourceClass
+from tsubo_contracts.enums import SourceClass
 from tsubo_ingest.adapter import AdapterResult, DiscoveredLink
 from tsubo_ingest.context import CrawlContext, FetchResponse, SourceConfig
+
+_PREF_PATH_RE = re.compile(r"/akiyabank/(?:tohoku|kanto|chubu|kansai|chugoku|shikoku|kyushu)/([^/]+)/?")
+_FIXTURE_PREF_RE = re.compile(r"/akiya/prefecture/\d+/([^/]+)/?")
 
 
 class LifullDiscoveryAdapter:
     adapter_id = "lifull_discovery"
 
     def matches(self, source: SourceConfig) -> bool:
-        return (
-            source.adapter_id == self.adapter_id
-            or (
-                source.source_class == SourceClass.NATIONWIDE_AKIYA_BANK
-                and "lifull" in source.source_id.lower()
-                and source.access_mode == AccessMode.PUBLIC_HTML
-            )
+        return source.adapter_id == self.adapter_id or (
+            source.source_class == SourceClass.NATIONWIDE_AKIYA_BANK
+            and source.source_id == "lifull_akiya_bank"
         )
 
     def parse(self, ctx: CrawlContext, response: FetchResponse) -> AdapterResult:
@@ -26,10 +27,8 @@ class LifullDiscoveryAdapter:
         links: list[DiscoveredLink] = []
         seen: set[str] = set()
 
-        for item in tree.css(".municipality-list li, .area-list__item"):
-            anchor = item.css_first("a[href]")
-            if not anchor:
-                continue
+        # Offline fixture format (akiya-v.jp style municipality list)
+        for anchor in tree.css(".municipality-list a[href], .municipality-index a[href]"):
             href = anchor.attributes.get("href")
             if not href:
                 continue
@@ -37,20 +36,41 @@ class LifullDiscoveryAdapter:
             if url in seen:
                 continue
             seen.add(url)
-            name_node = item.css_first(".municipality-name, .area-list__name")
-            name = name_node.text(strip=True) if name_node else anchor.text(strip=True)
-            count_node = item.css_first(".listing-count, .area-list__count")
-            count_text = count_node.text(strip=True) if count_node else None
+            name_node = anchor.css_first(".municipality-name")
+            label = name_node.text(strip=True) if name_node else anchor.text(strip=True) or url
             links.append(
                 DiscoveredLink(
                     url=url,
-                    label=name,
-                    entity_name=name,
-                    metadata={"listing_count_text": count_text},
+                    label=label,
+                    entity_name=label,
+                    metadata={"page_kind": "index"},
+                )
+            )
+
+        # Live homes.co.jp regional prefecture links
+        for anchor in tree.css("a[href]"):
+            href = anchor.attributes.get("href")
+            if not href:
+                continue
+            url = absolute_url(ctx.url, href)
+            if not _PREF_PATH_RE.search(url):
+                continue
+            if url in seen:
+                continue
+            seen.add(url)
+            label = anchor.text(strip=True) or url
+            pref_match = _PREF_PATH_RE.search(url)
+            pref_slug = pref_match.group(1) if pref_match else None
+            links.append(
+                DiscoveredLink(
+                    url=url,
+                    label=label,
+                    entity_name=label,
+                    metadata={"prefecture_slug": pref_slug, "page_kind": "index"},
                 )
             )
 
         return AdapterResult(
             links=links,
-            metadata={"adapter": self.adapter_id, "municipality_count": len(links)},
+            metadata={"adapter": self.adapter_id, "prefecture_count": len(links)},
         )

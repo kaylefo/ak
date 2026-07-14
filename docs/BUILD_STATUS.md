@@ -15,10 +15,9 @@ Checklist of platform components. Items are marked done only when implementation
 
 - [x] Alembic migrations (`001_initial_schema`, `002_slugs_and_fx_fields`)
 - [x] Core schema: administrative entities, sources, coverage, listings, FX, provenance, users
-- [x] Prefecture seed data (47 prefectures)
+- [x] Municipality import from geolonia address CSV (1894 codes → 1941 entities incl. wards)
+- [x] Explicit `SOURCE_MISSING` coverage state per imported jurisdiction
 - [x] Source registry seed (`sources/registry/seed_sources.yaml`)
-- [x] Seed script with sample municipality coverage states and fixture-derived listing
-- [ ] Full municipality import from MLIT N03 / e-Stat
 - [ ] Historical administrative entity versions
 - [ ] Address Base Registry geocoder integration
 
@@ -26,15 +25,17 @@ Checklist of platform components. Items are marked done only when implementation
 
 - [x] SourceAdapter protocol and crawl context
 - [x] SSRF-protected HTTP client with conditional requests
-- [x] Immutable snapshot storage (S3/MinIO)
-- [x] MLIT discovery and municipal-link adapters (fixture-tested)
-- [x] LIFULL discovery and listing adapters (fixture-tested)
+- [x] Hybrid immutable snapshot storage (S3/MinIO or local content-addressed files)
+- [x] End-to-end ingestion pipeline (fetch → snapshot → parse → canonical listing)
+- [x] MLIT discovery and municipal-link adapters (fixture + live HTML)
+- [x] LIFULL discovery and listing adapters (fixture + live homes.co.jp HTML)
 - [x] At Home discovery and listing adapters (fixture-tested)
 - [x] Generic HTML, table, JSON-LD adapters
 - [x] No-inventory page classifier
+- [x] Bot-challenge / AWS WAF interstitial detection
 - [x] Japanese normalization (money, area, dates, layout, address, status)
 - [x] Adapter contract tests (31 ingest tests, offline)
-- [ ] Live end-to-end crawl to canonical listing in running Compose stack
+- [x] Live LIFULL Aomori crawl verified: 30 listings, 30 with JPY prices, 0 bot-blocked titles
 - [ ] Parser drift detection and quarantine publication
 - [ ] PDF and spreadsheet inventory adapters
 - [ ] Representative municipal direct-source adapters (all regions)
@@ -42,14 +43,15 @@ Checklist of platform components. Items are marked done only when implementation
 ## API
 
 - [x] FastAPI application with OpenAPI
-- [x] Listings, search, jurisdictions, sources, coverage, FX, admin routes
+- [x] Listings (PostgreSQL-backed), search, jurisdictions, sources, coverage, FX, admin routes
 - [x] `/api/v1/fx/current` with JPY base and USD quote
 - [x] USD filter conversion server-side
 - [x] Request ID middleware and structured errors
+- [x] OpenSearch indexing module (`tsubo_api/search/indexing.py`)
 - [x] API unit tests (21 tests)
 - [ ] Authentication and user mutation endpoints
 - [ ] Saved searches, favorites, alerts, buyer packets
-- [ ] OpenSearch index auto-provisioning and full reindex command verified against live cluster
+- [ ] OpenSearch index verified against live cluster (requires Docker/OpenSearch)
 
 ## FX
 
@@ -61,6 +63,13 @@ Checklist of platform components. Items are marked done only when implementation
 - [x] FX fallback integration tests (5 tests)
 - [ ] Redis cache layer for current observation
 - [ ] Cross-provider deviation alerting
+
+## Translation
+
+- [x] Deterministic glossary translation service (`GlossaryTranslationService`)
+- [x] Glossary seed (`data/glossary/terms.json`)
+- [ ] External translation provider integration
+- [ ] Translation review admin UI
 
 ## Frontend
 
@@ -81,14 +90,15 @@ Checklist of platform components. Items are marked done only when implementation
 - [x] FXRefreshWorkflow
 - [x] CrawlSourceWorkflow (stub activity)
 - [x] SourceDiscoveryWorkflow (stub activity)
-- [x] IndexListingWorkflow (stub activity)
+- [x] IndexListingWorkflow with `reindex_all` / `index_listing_batch`
 - [ ] Scheduled cron workflows in Temporal
 - [ ] Worker verified against live Temporal cluster
 
 ## Operations
 
 - [x] `scripts/bootstrap.sh`, `migrate.sh`, `seed.sh`, `verify.sh`
-- [x] `scripts/crawl.sh`, `reindex.sh`
+- [x] `scripts/crawl.sh`, `scripts/reindex.sh`, `scripts/download_municipalities.sh`
+- [x] `services/api/scripts/reindex.py` (direct reindex without Temporal)
 - [ ] Backup/restore runbook executed in clean environment
 - [ ] Observability dashboards
 
@@ -103,7 +113,20 @@ Checklist of platform components. Items are marked done only when implementation
 
 ## Known Gaps (honest)
 
-- Nationwide municipality coverage is **not** complete; prefectures are seeded with explicit `SOURCE_MISSING` / `UNDER_REVIEW` states.
-- Live crawling requires Docker Compose and outbound network; not verified in this CI sandbox (no Docker daemon).
-- Optional enrichments (MLIT ReinfoLib, translation provider) are interface-ready but disabled without credentials.
+- Docker daemon unavailable in this CI sandbox; OpenSearch/Temporal/MinIO not verified live here.
+- At Home live crawl returns 403 from this environment (adapter fixtures pass offline).
+- LIFULL detail pages intermittently return AWS WAF 202 challenges; index-card ingestion is primary path.
+- Optional enrichments (MLIT ReinfoLib, external translation provider) disabled without credentials.
 - User features (auth, alerts, packets) are schema-ready but not yet exposed in API/UI.
+
+## Verified Commands (local Postgres)
+
+```bash
+export DATABASE_URL_SYNC=postgresql://tsubo:tsubo@localhost:5432/tsubo
+./scripts/download_municipalities.sh
+./scripts/seed.sh
+./scripts/crawl.sh lifull_aomori_listings true
+cd services/ingest && PYTHONPATH=../../services/api:../../packages/contracts/python:../../sources:. python3 -m pytest tests/ -q
+```
+
+Last verified crawl: 30 canonical listings, 30 with `price_jpy`, 0 `JavaScript is disabled` titles.

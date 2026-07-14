@@ -63,14 +63,41 @@ def parse_key_value_table(tree: HTMLParser, table_selector: str = "table") -> di
     fields: dict[str, str] = {}
     for table in tree.css(table_selector):
         for row in table.css("tr"):
+            headers = row.css("th")
+            values = row.css("td")
+            if headers and values and len(headers) == len(values):
+                for header, value in zip(headers, values, strict=False):
+                    key = header.text(strip=True)
+                    val = value.text(strip=True)
+                    if key and val:
+                        fields[key] = val
+                continue
             cells = row.css("th, td")
             if len(cells) < 2:
                 continue
-            key = cells[0].text(strip=True)
-            value = cells[1].text(strip=True)
-            if key:
-                fields[key] = value
+            for idx in range(0, len(cells) - 1, 2):
+                key = cells[idx].text(strip=True)
+                val = cells[idx + 1].text(strip=True)
+                if key and val:
+                    fields[key] = val
     return fields
+
+
+def is_bot_challenge_page(text: str, *, status_code: int | None = None) -> bool:
+    """Detect AWS WAF / JS-required interstitial pages."""
+    if status_code in {202, 403, 503}:
+        sample = text[:4000].lower()
+        if "awswaf" in sample or "challenge-container" in sample or "javascript is disabled" in sample:
+            return True
+    lowered = text[:8000].lower()
+    markers = (
+        "javascript is disabled",
+        "awswafintegration",
+        "challenge-container",
+        "token.awswaf.com",
+        "please enable javascript",
+    )
+    return any(marker in lowered for marker in markers)
 
 
 def parse_dl_fields(tree: HTMLParser, dl_selector: str = "dl") -> dict[str, str]:
@@ -147,12 +174,12 @@ def extract_json_ld(tree: HTMLParser) -> list[dict[str, Any]]:
     return documents
 
 
-_EXTERNAL_ID_RE = re.compile(r"/(?:detail|property|bukken)/(?:[^/]+/)?([A-Za-z0-9_-]+)/?")
+_EXTERNAL_ID_RE = re.compile(r"/b-(\d+)/?", re.IGNORECASE)
 
 
 def external_id_from_url(url: str, fallback: str = "unknown") -> str:
     match = _EXTERNAL_ID_RE.search(url)
     if match:
-        return match.group(1)
+        return f"b-{match.group(1)}"
     slug = urlparse(url).path.rstrip("/").split("/")[-1]
     return slug or fallback
