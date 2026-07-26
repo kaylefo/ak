@@ -1,0 +1,18 @@
+name: Terpeezy Scrapling Crawl
+
+# The full 18-source matrix was launched from PR run 30219535072.
+# Keep this workflow manual-only so subsequent retry commits do not duplicate the entire crawl.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Archived execution boundary
+        run: |
+          echo 'The authoritative full-matrix crawl is GitHub Actions run 30219535072.'
+          echo 'Source-specific retry workflows produce the remaining artifacts.'

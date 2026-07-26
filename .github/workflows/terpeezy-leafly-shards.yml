@@ -1,0 +1,90 @@
+name: Terpeezy Leafly Sharded Scrapling Crawl
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/scripts/leafly_shard.py'
+      - '.github/workflows/terpeezy-leafly-shards.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shard:
+    name: Leafly shard ${{ matrix.shard }} of 16
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 16
+      matrix:
+        shard: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+
+    steps:
+      - name: Check out crawl branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Scrapling crawler dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'scrapling[fetchers]==0.4.11' lxml orjson
+
+      - name: Materialize crawler
+        run: |
+          python terpeezy_crawl/materialize.py
+          python -m py_compile terpeezy_crawl/crawl.py .github/scripts/leafly_shard.py
+
+      - name: Stagger API discovery
+        run: sleep $(( ${{ matrix.shard }} * 3 ))
+
+      - name: Crawl complete Leafly shard with Scrapling
+        id: crawl
+        continue-on-error: true
+        env:
+          PYTHONUNBUFFERED: '1'
+        run: |
+          python .github/scripts/leafly_shard.py \
+            --shard-index '${{ matrix.shard }}' \
+            --shard-count 16 \
+            --output-root out \
+            --concurrency 5 \
+            --delay 0.10
+
+      - name: Print exact shard manifest
+        if: always()
+        run: |
+          shard=$(printf '%02d' '${{ matrix.shard }}')
+          if [ -f "out/leafly-shard-${shard}-of-16/manifest.json" ]; then
+            cat "out/leafly-shard-${shard}-of-16/manifest.json"
+          else
+            echo 'No shard manifest was produced.'
+          fi
+
+      - name: Package shard corpus
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          shard = int('${{ matrix.shard }}')
+          root = Path('out') / f'leafly-shard-{shard:02d}-of-16'
+          root.mkdir(parents=True, exist_ok=True)
+          shutil.make_archive(f'terpeezy-leafly-shard-{shard:02d}', 'zip', root)
+          PY
+
+      - name: Upload shard corpus
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terpeezy-leafly-shard-${{ matrix.shard }}
+          path: terpeezy-leafly-shard-*.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
