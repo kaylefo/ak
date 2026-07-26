@@ -1,175 +1,18 @@
 name: Terpeezy Scrapling Crawl
 
+# The full 18-source matrix was launched from PR run 30219535072.
+# Keep this workflow manual-only so subsequent retry commits do not duplicate the entire crawl.
 on:
-  pull_request:
-    branches: [main]
-    paths:
-      - 'terpeezy_crawl/**'
-      - '.github/workflows/terpeezy-crawl.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  validate:
-    name: Validate crawler against live Leafly pages
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    steps:
-      - name: Check out crawl branch
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Scrapling crawler dependencies
-        run: |
-          python -m pip install --upgrade pip
-          python -m pip install 'scrapling[fetchers]==0.4.11' lxml orjson
-
-      - name: Materialize and verify crawler
-        run: |
-          python terpeezy_crawl/materialize.py
-          python -m py_compile terpeezy_crawl/crawl.py
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          registry = json.loads(Path('terpeezy_crawl/sources.json').read_text())
-          assert len(registry) == 18, len(registry)
-          print('registered sources:', ', '.join(sorted(registry)))
-          PY
-
-      - name: Run live Scrapling validation crawl
-        run: |
-          python terpeezy_crawl/crawl.py \
-            --source leafly \
-            --output-root validation-out \
-            --max-details 5 \
-            --no-raw
-
-      - name: Verify validation manifest
-        run: |
-          python - <<'PY'
-          import json
-          from pathlib import Path
-          manifest = json.loads(Path('validation-out/leafly/manifest.json').read_text())
-          print(json.dumps(manifest, indent=2))
-          assert manifest['crawler'] == 'Scrapling'
-          assert manifest['discovered_urls'] >= 500
-          assert manifest['crawl']['attempted'] == 5
-          assert manifest['crawl']['success'] >= 4
-          PY
-
-      - name: Package validation evidence
-        if: always()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import shutil
-          root = Path('validation-out/leafly')
-          root.mkdir(parents=True, exist_ok=True)
-          shutil.make_archive('terpeezy-validation-leafly', 'zip', root)
-          PY
-
-      - name: Upload validation evidence
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: terpeezy-validation-leafly
-          path: terpeezy-validation-leafly.zip
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 7
-
   crawl:
-    name: Crawl ${{ matrix.source }}
-    needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 355
-    strategy:
-      fail-fast: false
-      max-parallel: 18
-      matrix:
-        source:
-          - leafly
-          - weedmaps
-          - allbud
-          - seedfinder
-          - cannaconnection
-          - askgrowers
-          - hytiva
-          - leafwell
-          - cannigma
-          - wayofleaf
-          - growdiaries
-          - thcfarmer
-          - strainpedia
-          - marijuana_guides
-          - ilgm
-          - ctu
-          - cannapedia
-          - leefii
-
     steps:
-      - name: Check out crawl branch
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-
-      - name: Install Scrapling crawler dependencies
+      - name: Archived execution boundary
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install 'scrapling[fetchers]==0.4.11' lxml orjson
-
-      - name: Materialize crawler
-        run: |
-          python terpeezy_crawl/materialize.py
-          python -m py_compile terpeezy_crawl/crawl.py
-
-      - name: Run complete source crawl
-        id: crawl
-        continue-on-error: true
-        env:
-          PYTHONUNBUFFERED: '1'
-        run: |
-          python terpeezy_crawl/crawl.py \
-            --source '${{ matrix.source }}' \
-            --output-root out \
-            --no-raw
-
-      - name: Print exact source manifest
-        if: always()
-        run: |
-          if [ -f 'out/${{ matrix.source }}/manifest.json' ]; then
-            cat 'out/${{ matrix.source }}/manifest.json'
-          else
-            echo 'No manifest was produced.'
-          fi
-
-      - name: Package source corpus
-        if: always()
-        run: |
-          python - <<'PY'
-          from pathlib import Path
-          import shutil
-          source = '${{ matrix.source }}'
-          root = Path('out') / source
-          root.mkdir(parents=True, exist_ok=True)
-          shutil.make_archive(f'terpeezy-{source}', 'zip', root)
-          PY
-
-      - name: Upload source corpus
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: terpeezy-${{ matrix.source }}
-          path: terpeezy-${{ matrix.source }}.zip
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 7
+          echo 'The authoritative full-matrix crawl is GitHub Actions run 30219535072.'
+          echo 'Source-specific retry workflows produce the remaining artifacts.'
