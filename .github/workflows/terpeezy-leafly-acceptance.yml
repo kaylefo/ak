@@ -1,5 +1,6 @@
 name: Terpeezy Leafly Exact Acceptance
 
+# Exact acceptance gate: actual listing page order plus full source-specific strain records.
 on:
   pull_request:
     branches: [main]
