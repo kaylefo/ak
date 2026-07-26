@@ -1,0 +1,54 @@
+name: Terpeezy Scrapling Crawl
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'terpeezy_crawl/**'
+      - '.github/workflows/terpeezy-crawl.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out crawl branch
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install Scrapling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install 'scrapling[fetchers]==0.4.11'
+
+      - name: Run live Leafly Scrapling smoke crawl
+        run: python terpeezy_crawl/smoke.py
+
+      - name: Package smoke corpus
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import shutil
+          root = Path('out/smoke')
+          root.mkdir(parents=True, exist_ok=True)
+          shutil.make_archive('terpeezy-scrapling-smoke', 'zip', root)
+          PY
+
+      - name: Upload smoke artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terpeezy-scrapling-smoke
+          path: terpeezy-scrapling-smoke.zip
+          if-no-files-found: error
+          retention-days: 7
